@@ -33,7 +33,17 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         Responses of test samples
 
     """
-    raise NotImplementedError()
+    if not (0 <= train_proportion <= 1):
+        raise ValueError("train_proportion must be a value between 0 and 1")
+
+    train = X.sample(frac=train_proportion)
+    train_idx = train.index
+    test = X.loc[X.index.difference(train_idx)]
+    train_y = y.loc[train_idx]
+    test_y = y.loc[test.index]
+
+    return train, train_y, test, test_y
+
 
 
 def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:
