@@ -46,7 +46,18 @@ class LDA(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        self.classes_, counts = np.unique(y, return_counts=True)
+        self.pi_ = counts / y.size
+
+        sorted_X = X[np.argsort(y)]
+        grouped_X = np.array_split(sorted_X, np.cumsum(counts)[:-1])
+
+        self.mu_ = np.array([group.mean(axis=0) for group in grouped_X])
+
+        deviations = np.concatenate([group - mu for group, mu in zip(grouped_X, self.mu_)])
+        self.cov_ = np.cov(deviations, rowvar=False, bias=True)
+
+        self._cov_inv = np.linalg.inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -62,7 +73,9 @@ class LDA(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        log_likelihoods = np.log(self.pi_) + X @ (self._cov_inv @ self.mu_.T)
+        mu_cov_mu = 0.5 * np.einsum('ij,ji->i', self.mu_, self._cov_inv @ self.mu_.T)
+        return np.argmax(log_likelihoods - mu_cov_mu, axis=1)
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -82,7 +95,12 @@ class LDA(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        raise NotImplementedError()
+        diff = X[:, np.newaxis, :] - self.mu_
+        cov_inv_dot_diff = np.einsum('ijk,kl->ijl', diff, self._cov_inv)
+        exp_part = np.exp(-0.5 * np.einsum('ijk,ijk->ij', diff, cov_inv_dot_diff))
+        normalization_factor = np.sqrt((2 * np.pi) ** X.shape[1] * np.linalg.det(self.cov_))
+
+        return (exp_part / normalization_factor) * self.pi_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -102,4 +120,4 @@ class LDA(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        raise NotImplementedError()
+        return misclassification_error(y, self.predict(X))
