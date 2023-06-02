@@ -8,15 +8,12 @@ from itertools import product
 class DecisionStump(BaseEstimator):
     """
     A decision stump classifier for {-1,1} labels according to the CART algorithm
-
     Attributes
     ----------
     self.threshold_ : float
         The threshold by which the data is split
-
     self.j_ : int
         The index of the feature by which to split the data
-
     self.sign_: int
         The label to predict for samples where the value of the j'th feature is about the threshold
     """
@@ -29,89 +26,101 @@ class DecisionStump(BaseEstimator):
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
-        fits a decision stump to the given data
-
+        Fit a decision stump to the given data. That is, finds the best feature and threshold by which to split
         Parameters
         ----------
         X : ndarray of shape (n_samples, n_features)
             Input data to fit an estimator for
-
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        threshold_error_pairs = [(self._find_threshold(X[:, j], y, sign) for sign in [1, -1]) for j in
+                                 range(X.shape[1])]
+        thresholds_by_feature, thr_err = zip(
+            *[(threshold, error) for threshold_error_pair in threshold_error_pairs for threshold, error in
+              threshold_error_pair])
+
+        thresholds_by_feature = np.array(thresholds_by_feature).reshape(2, X.shape[1])
+        thr_err = np.array(thr_err).reshape(2, X.shape[1])
+
+        minimizer = np.unravel_index(np.argmin(thr_err), thr_err.shape)
+        self.sign_ = 1 if minimizer[0] == 1 else -1
+        self.j_ = minimizer[1]
+        self.threshold_ = thresholds_by_feature[minimizer]
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predict responses for given samples using fitted estimator
-
+        Predict sign responses for given samples using fitted estimator
         Parameters
         ----------
         X : ndarray of shape (n_samples, n_features)
             Input data to predict responses for
-
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
-
         Returns
         -------
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
-
         Notes
         -----
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        conditions = [X[:, self.j_] < self.threshold_, X[:, self.j_] >= self.threshold_]
+        choices = [-self.sign_, self.sign_]
+
+        return np.select(conditions, choices)
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
         Given a feature vector and labels, find a threshold by which to perform a split
         The threshold is found according to the value minimizing the misclassification
         error along this feature
-
         Parameters
         ----------
         values: ndarray of shape (n_samples,)
             A feature vector to find a splitting threshold for
-
         labels: ndarray of shape (n_samples,)
             The labels to compare against
-
         sign: int
             Predicted label assigned to values equal to or above threshold
-
         Returns
         -------
         thr: float
             Threshold by which to perform split
-
         thr_err: float between 0 and 1
             Misclassificaiton error of returned threshold
-
         Notes
         -----
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        ordered_indices = np.argsort(values)
+        values, labels = values[ordered_indices], labels[ordered_indices]
+
+        correct_weights = np.where(np.sign(labels) == sign, np.abs(labels), 0)
+        total_errors = np.insert(np.cumsum(correct_weights), 0, 0) + np.append(
+            np.cumsum((np.abs(labels) - correct_weights)[::-1])[::-1], 0)
+
+        min_error_index = np.argmin(total_errors)
+        optimal_threshold = values[min_error_index - 1] + 0.1 if min_error_index == values.size else values[
+            min_error_index]
+
+        return optimal_threshold, total_errors[min_error_index]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
         Evaluate performance under misclassification loss function
-
         Parameters
         ----------
         X : ndarray of shape (n_samples, n_features)
             Test samples
-
         y : ndarray of shape (n_samples, )
             True labels of test samples
-
         Returns
         -------
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        from ...metrics import misclassification_error
+        return misclassification_error(y, self._predict(X))

@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Tuple
-from IMLearn.learners.metalearners.adaboost import AdaBoost
+from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import plotly.graph_objects as go
@@ -10,20 +10,16 @@ from plotly.subplots import make_subplots
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generate a dataset in R^2 of specified size
-
     Parameters
     ----------
     n: int
         Number of samples to generate
-
     noise_ratio: float
         Ratio of labels to invert
-
     Returns
     -------
     X: np.ndarray of shape (n_samples,2)
         Design matrix of samples
-
     y: np.ndarray of shape (n_samples,)
         Labels of samples
     """
