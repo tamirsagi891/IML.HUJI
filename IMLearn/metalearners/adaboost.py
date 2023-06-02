@@ -46,6 +46,8 @@ class AdaBoost(BaseEstimator):
             Responses of input data to fit to
         """
         total_samples = y.size
+        self.models_ = np.ndarray([self.iterations_], dtype=BaseEstimator)
+        self.weights_ = np.ndarray([self.iterations_])
         self.D_ = np.full(total_samples, 1 / total_samples)
 
         for itr in range(self.iterations_):

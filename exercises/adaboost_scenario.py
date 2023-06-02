@@ -38,7 +38,26 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
 
     # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
+    adaboost_model = AdaBoost(DecisionStump, n_learners)
+    adaboost_model.fit(train_X, train_y)
+    train_errors = [adaboost_model.partial_loss(train_X, train_y, t) for t in range(1, n_learners + 1)]
+    test_errors = [adaboost_model.partial_loss(test_X, test_y, t) for t in range(1, n_learners + 1)]
+
+    fig = go.Figure(
+        data=[
+            go.Scatter(x=list(range(1, n_learners + 1)), y=train_errors,
+                       name=f"Training Error for {n_learners} Learners", mode="lines"),
+            go.Scatter(x=list(range(1, n_learners + 1)), y=test_errors,
+                       name=f"Test Error for {n_learners} Learners", mode="lines")
+        ],
+        layout=go.Layout(
+            width=1000, height=500,
+            title={"text": f"AdaBoost Misclassification Errors vs Number of Learners with Noise Ratio {noise}"},
+            xaxis_title=f"Number of Learners (1 to {n_learners})",
+            yaxis_title="Misclassification Error"
+        )
+    )
+    fig.write_image(f"adaboost_errors_NoiseRatio_{noise}_NumLearners_{n_learners}.png")
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
@@ -54,4 +73,5 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    fit_and_evaluate_adaboost(0)
+    fit_and_evaluate_adaboost(0.4)
