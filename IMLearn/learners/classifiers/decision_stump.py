@@ -34,19 +34,21 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        threshold_error_pairs = [(self._find_threshold(X[:, j], y, sign) for sign in [1, -1]) for j in
-                                 range(X.shape[1])]
-        thresholds_by_feature, thr_err = zip(
-            *[(threshold, error) for threshold_error_pair in threshold_error_pairs for threshold, error in
-              threshold_error_pair])
+        feature_thresholds = np.ndarray((2, X.shape[1]))
+        error_matrix = np.ndarray((2, X.shape[1]))
 
-        thresholds_by_feature = np.array(thresholds_by_feature).reshape(2, X.shape[1])
-        thr_err = np.array(thr_err).reshape(2, X.shape[1])
+        for feature_index in range(X.shape[1]):
+            for sign in [1, -1]:
+                optimal_threshold, corresponding_error = self._find_threshold(X[:, feature_index], y, sign)
 
-        minimizer = np.unravel_index(np.argmin(thr_err), thr_err.shape)
-        self.sign_ = 1 if minimizer[0] == 1 else -1
-        self.j_ = minimizer[1]
-        self.threshold_ = thresholds_by_feature[minimizer]
+                row_index = 0 if sign == -1 else 1
+                feature_thresholds[row_index, feature_index] = optimal_threshold
+                error_matrix[row_index, feature_index] = corresponding_error
+
+        min_error_index = np.unravel_index(np.argmin(error_matrix), error_matrix.shape)
+        self.sign_ = -1 if min_error_index[0] == 0 else 1
+        self.j_ = min_error_index[1]
+        self.threshold_ = feature_thresholds[min_error_index]
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
