@@ -137,3 +137,4 @@ class AdaBoost(BaseEstimator):
         """
         from IMLearn.metrics.loss_functions import misclassification_error
         return misclassification_error(y, self.partial_predict(X, T))
+
