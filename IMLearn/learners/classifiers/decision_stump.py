@@ -100,15 +100,23 @@ class DecisionStump(BaseEstimator):
         ordered_indices = np.argsort(values)
         values, labels = values[ordered_indices], labels[ordered_indices]
 
-        correct_weights = np.where(np.sign(labels) == sign, np.abs(labels), 0)
-        total_errors = np.insert(np.cumsum(correct_weights), 0, 0) + np.append(
-            np.cumsum((np.abs(labels) - correct_weights)[::-1])[::-1], 0)
+        sample_count = values.shape[0]
+        accumulated_errors = np.zeros(sample_count + 1)
+        sign_vector = np.full(sample_count, sign)
 
-        min_error_index = np.argmin(total_errors)
-        optimal_threshold = values[min_error_index - 1] + 0.1 if min_error_index == values.size else values[
-            min_error_index]
+        for i in range(sample_count + 1):
+            accumulated_errors[i] = np.sum(np.where(sign_vector != np.sign(labels), np.abs(labels), 0))
+            if i < sample_count:
+                sign_vector[i] = -sign
 
-        return optimal_threshold, total_errors[min_error_index]
+        min_error_index = np.argmin(accumulated_errors)
+
+        if min_error_index == sample_count :
+            optimal_threshold = values[-1] + 0.1
+        else:
+            optimal_threshold = values[min_error_index]
+
+        return optimal_threshold, accumulated_errors[min_error_index] / len(values)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

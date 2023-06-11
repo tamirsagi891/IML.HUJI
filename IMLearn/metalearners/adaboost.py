@@ -46,27 +46,32 @@ class AdaBoost(BaseEstimator):
             Responses of input data to fit to
         """
         total_samples = y.size
-        self.models_ = np.ndarray([self.iterations_], dtype=BaseEstimator)
-        self.weights_ = np.ndarray([self.iterations_])
+        self.models_ = []
+        self.weights_ = []
         self.D_ = np.full(total_samples, 1 / total_samples)
 
         for itr in range(self.iterations_):
             label_weights = self.D_ * y
             ada_model = self.wl_().fit(X, label_weights)
-            self.models_[itr] = ada_model
 
             ada_predictions = ada_model.predict(X)
             misclassified = ada_predictions * y <= 0
             loss_weighted = np.sum(self.D_[misclassified])
 
             if loss_weighted == 0:
-                self.weights_.fill(0)
-                self.weights_[itr] = 1
+                self.models_.append(ada_model)
+                self.weights_.append(1)
+                break
             else:
-                self.weights_[itr] = 0.5 * np.log((1 / loss_weighted) - 1)
+                self.models_.append(ada_model)
+                weight = 0.5 * np.log((1 - loss_weighted) / loss_weighted)
+                self.weights_.append(weight)
 
-            self.D_ *= np.exp(-y * ada_predictions * self.weights_[itr])
-            self.D_ /= np.sum(self.D_)
+                self.D_ *= np.exp(-y * ada_predictions * weight)
+                self.D_ /= np.sum(self.D_)
+
+        self.models_ = np.array(self.models_, dtype=BaseEstimator)
+        self.weights_ = np.array(self.weights_)
 
     def _predict(self, X):
         """
