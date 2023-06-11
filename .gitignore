@@ -9,3 +9,4 @@ figures/*.png
 **.ipynb_checkpoints
 
 exercises/test_ex3.py
+IML_TESTS/
