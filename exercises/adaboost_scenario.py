@@ -54,15 +54,15 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     fig_a = go.Figure(
         data=[
             go.Scatter(x=list(learner_range), y=train_errors,
-                       name=f"Training Error for {n_learners} Learners", mode="lines"),
+                       name=f"Training Error", mode="lines"),
             go.Scatter(x=list(learner_range), y=test_errors,
-                       name=f"Test Error for {n_learners} Learners", mode="lines")
+                       name=f"Test Error", mode="lines")
         ],
         layout=go.Layout(
             width=1000, height=500,
             title={"text": f"AdaBoost Misclassification Errors vs Number of Learners with Noise Ratio {noise}"},
             xaxis_title={"text": f"Number of Fitted Learners"},
-            yaxis_title={"text": "Test Error"}
+            yaxis_title={"text": "Loss Error"}
         )
     )
     fig_a.write_image(f"Q1_AdaBoost_Errors_Noise_{noise}_Learners_{n_learners}.png")
@@ -118,7 +118,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     scaled_weights = adaboost_model.D_ / max_weights * scaled_size_factor
 
     fig_d = make_subplots(rows=1, cols=1, subplot_titles=[
-        f"Number of Learners: {optimal_num_learners}, Weighted Samples, Noise Level: {noise}"])
+        f"Normalized Weights and Decision Boundary of AdaBoost Classifier on Training Set"])
 
     fig_d.add_traces([decision_surface(lambda input_data: adaboost_model.partial_predict(input_data, 250), lims[0],
                                        lims[1], showscale=False),
