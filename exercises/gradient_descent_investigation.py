@@ -111,8 +111,8 @@ def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e /
                 layout=go.Layout(
                     title=dict(
                         text=f"Convergence Rate of {norm_name} Norm across Gradient Descent Iterations (Learning Rate: {learning_rate})",
-                        font=dict(size=18)),  # Increased font size
-                    xaxis=dict(title=f"Iteration", showgrid=True, titlefont=dict(size=16)),
+                        font=dict(size=10)),  # Increased font size
+                    xaxis=dict(title=f"Iteration", showgrid=True, titlefont=dict(size=8)),
                     yaxis=dict(title=f"Convergence Rate of {norm_name} Norm Value", showgrid=True,
                                titlefont=dict(size=8))  # Added grid lines and increased font size
                 )
@@ -190,11 +190,11 @@ def fit_logistic_regression():
         data=[go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
                          name="Ideal ROC Curve"),
               go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
-                         hovertemplate=f"Threshold: {{text:.3f}}<br>FPR: {{x:.3f}}<br>TPR: {{y:.3f}}")],
+                         hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}")],
         layout=go.Layout(title=f"ROC Curve of Logistic Regression - AUC={metrics.auc(fpr, tpr):.6f}",
                          xaxis=dict(title="False Positive Rate (FPR)"),
                          yaxis=dict(title="True Positive Rate (TPR)")))
-    fig.write_image('roc_curve.png')
+    fig.write_image('ROC_Curve.png')
 
     optimal_alpha = thresholds[np.argmax(tpr - fpr)]
     test_error = misclassification_error(y_test, logistic_reg.predict_proba(X_test) >= optimal_alpha)
