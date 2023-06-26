@@ -231,13 +231,11 @@ class RegularizedModule(BaseModule):
         output: ndarray of shape (n_in,)
             Derivative with respect to self.weights at point self.weights
         """
-        fidelity_jacobian = self.fidelity_module_.compute_jacobian(**kwargs)
-        regularization_jacobian = self.regularization_module_.compute_jacobian()
-
-        regularization_jacobian = np.where(self.include_intercept_, np.insert(regularization_jacobian, 0, 0),
-                                           regularization_jacobian)
-
-        return fidelity_jacobian + self.lam_ * regularization_jacobian
+        regularization = self.regularization_module_.compute_jacobian(**kwargs)
+        if self.include_intercept_:
+            regularization = np.insert(regularization, 0, 0)
+        fidelity = self.fidelity_module_.compute_jacobian(**kwargs)
+        return fidelity + (self.lam_ * regularization)
 
     @property
     def weights(self):
